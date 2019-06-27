@@ -126,7 +126,8 @@ private:
   int  roi_y_;                                      
   int  roi_w_;                                     
   int  roi_h_;     
-  
+  bool window_allowed_;
+
   /** \brief Container holding MarkerInfo data about all detected markers */
   std::vector<MarkerInfo> markers_;
    

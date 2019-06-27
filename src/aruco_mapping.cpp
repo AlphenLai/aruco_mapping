@@ -49,7 +49,8 @@ ArucoMapping::ArucoMapping(ros::NodeHandle *nh) :
   first_marker_detected_(false),          // First marker not detected by defualt
   lowest_marker_id_(-1),                  // Lowest marker ID
   marker_counter_(0),                     // Reset marker counter
-  closest_camera_index_(0)                // Reset closest camera index 
+  closest_camera_index_(0),               // Reset closest camera index 
+  window_allowed_(false)                  // Mono window not allowed to show by default
   
 {
   double temp_marker_size;  
@@ -64,6 +65,7 @@ ArucoMapping::ArucoMapping(ros::NodeHandle *nh) :
   nh->getParam("/aruco_mapping/roi_y",roi_y_);
   nh->getParam("/aruco_mapping/roi_w",roi_w_);
   nh->getParam("/aruco_mapping/roi_h",roi_h_);
+  nh->getParam("/aruco_mapping/window_allowed",window_allowed_);
      
   // Double to float conversion
   marker_size_ = float(temp_marker_size);
@@ -81,6 +83,7 @@ ArucoMapping::ArucoMapping(ros::NodeHandle *nh) :
     ROS_INFO_STREAM("ROI y-coor: " << roi_x_);
     ROS_INFO_STREAM("ROI width: "  << roi_w_);
     ROS_INFO_STREAM("ROI height: " << roi_h_);      
+    ROS_INFO_STREAM("Window allowed: " << window_allowed_);
   }
     
   //ROS publishers
@@ -91,7 +94,8 @@ ArucoMapping::ArucoMapping(ros::NodeHandle *nh) :
   parseCalibrationFile(calib_filename_);
 
   //Initialize OpenCV window
-  cv::namedWindow("Mono8", CV_WINDOW_AUTOSIZE);       
+  if(window_allowed_==true)
+    cv::namedWindow("Mono8", CV_WINDOW_AUTOSIZE);       
       
   //Resize marker container
   markers_.resize(num_of_markers_);
@@ -160,6 +164,7 @@ ArucoMapping::imageCallback(const sensor_msgs::ImageConstPtr &original_image)
 {
   //Create cv_brigde instance
   cv_bridge::CvImagePtr cv_ptr;
+  
   try
   {
     cv_ptr=cv_bridge::toCvCopy(original_image, sensor_msgs::image_encodings::MONO8);
@@ -169,7 +174,7 @@ ArucoMapping::imageCallback(const sensor_msgs::ImageConstPtr &original_image)
     ROS_ERROR("Not able to convert sensor_msgs::Image to OpenCV::Mat format %s", e.what());
     return;
   }
-  
+ 
   // sensor_msgs::Image to OpenCV Mat structure
   cv::Mat I = cv_ptr->image;
   
@@ -181,8 +186,10 @@ ArucoMapping::imageCallback(const sensor_msgs::ImageConstPtr &original_image)
   processImage(I,I);
   
   // Show image
-  cv::imshow("Mono8", I);
-  cv::waitKey(10);  
+  if(window_allowed_==true)
+    cv::imshow("Mono8", I);
+  cv::waitKey(10);
+
 }
 
 
